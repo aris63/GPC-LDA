@@ -3,9 +3,9 @@ import java.util.ArrayList;
 import Jama.Matrix;
 
 public class LDA {
-	private double[][] groupMean;
-	private double[][] pooledInverseCovariance;
-	private double[] probability;
+	private double[][] groupRataTengah;
+	private double[][] kovarianGlobal;
+	private double[] probabilitas;
 	private ArrayList<Integer> groupList = new ArrayList<Integer>();
         static int hasil;
         static double f1,f2,f3;
@@ -29,8 +29,8 @@ public class LDA {
 			group[j] = g[j];
 		}
 
-		double[] globalMean;
-		double[][][] covariance;
+		double[] rataTengah;
+		double[][][] kovarian;
 
 		//memisahkan berdasarkan grup atau kelas
 		for (int i = 0; i < group.length; i++) { 
@@ -51,17 +51,17 @@ public class LDA {
 		}
 
 		//menghitung mean tiap fitur tiap kelas
-		groupMean = new double[subset.length][data[0].length];
-		for (int i = 0; i < groupMean.length; i++) {
-			for (int j = 0; j < groupMean[i].length; j++) {
-				groupMean[i][j] = getGroupMean(j, subset[i]);
+		groupRataTengah = new double[subset.length][data[0].length];
+		for (int i = 0; i < groupRataTengah.length; i++) {
+			for (int j = 0; j < groupRataTengah[i].length; j++) {
+				groupRataTengah[i][j] = getGroupMean(j, subset[i]);
 			}
 		}
 
 		//menghitung global mean atau mean tiap fitur pada semua kelas
-		globalMean = new double[data[0].length];
+		rataTengah = new double[data[0].length];
 		for (int i = 0; i < data[0].length; i++) {
-			globalMean[i] = getGlobalMean(i, data);
+			rataTengah[i] = getGlobalMean(i, data);
 		}
 
 		// correct subset data
@@ -70,51 +70,51 @@ public class LDA {
 				double[] v = subset[i].get(j);
 
 				for (int k = 0; k < v.length; k++)
-					v[k] = v[k] - globalMean[k];//zero mean = data ke i- global mean
+					v[k] = v[k] - rataTengah[k];//zero mean = data ke i- global mean
 
 				subset[i].set(j, v);
 			}
 		}
 
 		//menghitung kovarian,kovarian=(matriks zero mean transpose*matriks zero mean)/jml data
-		covariance = new double[subset.length][globalMean.length][globalMean.length];
-		for (int i = 0; i < covariance.length; i++) {
-			for (int j = 0; j < covariance[i].length; j++) {
-				for (int k = 0; k < covariance[i][j].length; k++) {
+		kovarian = new double[subset.length][rataTengah.length][rataTengah.length];
+		for (int i = 0; i < kovarian.length; i++) {
+			for (int j = 0; j < kovarian[i].length; j++) {
+				for (int k = 0; k < kovarian[i][j].length; k++) {
 					for (int l = 0; l < subset[i].size(); l++)
-						covariance[i][j][k] += (subset[i].get(l)[j] * subset[i]
+						kovarian[i][j][k] += (subset[i].get(l)[j] * subset[i]
 								.get(l)[k]);
 
-					covariance[i][j][k] = covariance[i][j][k]
+					kovarian[i][j][k] = kovarian[i][j][k]
 							/ subset[i].size();
 				}
 			}
 		}
 
 		//menghitung kovarian global
-		pooledInverseCovariance = new double[globalMean.length][globalMean.length];
-		for (int j = 0; j < pooledInverseCovariance.length; j++) {
-			for (int k = 0; k < pooledInverseCovariance[j].length; k++) {
+		kovarianGlobal = new double[rataTengah.length][rataTengah.length];
+		for (int j = 0; j < kovarianGlobal.length; j++) {
+			for (int k = 0; k < kovarianGlobal[j].length; k++) {
 				for (int l = 0; l < subset.length; l++) {
-					pooledInverseCovariance[j][k] += ((double) subset[l].size() / (double) data.length)//jumlah kelas dibagi jumlah data dikali kovarian
-							* covariance[l][j][k];
+					kovarianGlobal[j][k] += ((double) subset[l].size() / (double) data.length)//jumlah kelas dibagi jumlah data dikali kovarian
+							* kovarian[l][j][k];
 				}
 			}
 		}
                 //mencari invers matriks kovarian
-		pooledInverseCovariance = new Matrix(pooledInverseCovariance).inverse()
+		kovarianGlobal = new Matrix(kovarianGlobal).inverse()
 				.getArray();
 
 		//menghitung probability posterior untuk kelas yang berbeda
-		this.probability = new double[subset.length]; 
+		this.probabilitas = new double[subset.length]; 
 		if (!p) {
 			double prob = 1.0d / groupList.size();
 			for (int i = 0; i < groupList.size(); i++) {
-				this.probability[i] = prob;
+				this.probabilitas[i] = prob;
 			}
 		} else {
 			for (int i = 0; i < subset.length; i++) {
-				this.probability[i] = (double) subset[i].size()//lemon=3/15, manis=5/15, nipis=7/15
+				this.probabilitas[i] = (double) subset[i].size()//lemon=3/15, manis=5/15, nipis=7/15
 						/ (double) data.length;
 			}
 		}
@@ -142,11 +142,11 @@ public class LDA {
 	public double[] getDiscriminantFunctionValues(double[] values) {
 		double[] function = new double[groupList.size()];
 		for (int i = 0; i < groupList.size(); i++) {
-			double[] tmp = matrixMultiplication(groupMean[i],
-					pooledInverseCovariance);
+			double[] tmp = matrixMultiplication(groupRataTengah[i],
+					kovarianGlobal);
 			function[i] = (matrixMultiplication(tmp, values))//fi=miu i*invers kovarian*data testing-1/2 miu i*invers kovarian*miu i trans+ln(pi)
-					- (.5d * matrixMultiplication(tmp, groupMean[i]))
-					+ Math.log(probability[i]);
+					- (.5d * matrixMultiplication(tmp, groupRataTengah[i]))
+					+ Math.log(probabilitas[i]);
 		}
 
 		return function;
