@@ -23,10 +23,10 @@ public static void inputGambar(String namaFile){
             int[] coordinat2=new int[img.getHeight()];
             for (int i=0; i<img.getHeight();i++){
                 for (int j=0; j<img.getWidth();j++){
-                    Color c = new Color(img.getRGB(j, i),true);
-                    int red = c.getRed();
-                    int green = c.getGreen();
-                    int blue = c.getBlue();
+                    Color color = new Color(img.getRGB(j, i),true);
+                    int red = color.getRed();
+                    int green = color.getGreen();
+                    int blue = color.getBlue();
                     if(red!=255 && blue!=255 & green!=255){
                     redf+=red;greenf+=green;bluef+=blue;}
                     int rata2 = Math.round((red+green+blue)/3);
@@ -36,7 +36,7 @@ public static void inputGambar(String namaFile){
                     black = (black<<16)|(black<<8)| black;
                     img3.setRGB(j, i, black);
                     rata2 = (rata2<<16)|(rata2<<8)| rata2;
-                    img2.setRGB(j, i, rata2);                        
+                    img2.setRGB(j, i, rata2);                          
                 }
             }
             int change=0,count1=0,count2=0;
