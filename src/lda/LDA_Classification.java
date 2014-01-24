@@ -441,9 +441,9 @@ int u=0;
                         greenf += green;
                         bluef += blue;
                     }
-                    int rata2 = Math.round((red + green + blue) / 3);
+                    int rata2 = Math.round((red + green + blue) / 3); //konversi citra menjadi grayscale
                     int black = 0;
-                    if (rata2 > 230) {
+                    if (rata2 > 230) { //thresholding
                         black = 0;
                     } else {
                         black = 255;
